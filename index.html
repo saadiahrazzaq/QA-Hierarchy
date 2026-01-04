@@ -4,15 +4,16 @@
   <meta charset="utf-8">
   <title>QA Hierarchy</title>
 
-  <!-- Local OrgChart library (self-hosted) -->
+  <!-- Self-hosted OrgChart library -->
   <script src="./orgchart.js"></script>
 
   <style>
     body {
       margin: 0;
-      background: #0b2233;
+      background: #062233;
       font-family: Arial, sans-serif;
     }
+
     #tree {
       width: 100vw;
       height: 100vh;
@@ -24,13 +25,43 @@
   <div id="tree"></div>
 
   <script>
-    const DATA_URL = "https://script.google.com/macros/s/AKfycbygw8c5ss2yW5wneBny74TUhD9_aRQIEQWZ03UaPfUyyX2J2m0cj9P7ydPbs2fXW53r/exec";
+    /* ============================
+       CUSTOM QA TEMPLATE
+       ============================ */
+
+    OrgChart.templates.qa = Object.assign({}, OrgChart.templates.olivia);
+
+    // Bigger node size
+    OrgChart.templates.qa.size = [320, 120];
+
+    // Yellow card background
+    OrgChart.templates.qa.node =
+      '<rect x="0" y="0" width="320" height="120" rx="16" ry="16" ' +
+      'fill="#FFC107" stroke="#FFB300" stroke-width="2"></rect>';
+
+    // Name (bigger, bold, wraps)
+    OrgChart.templates.qa.field_0 =
+      '<text data-width="300" data-text-overflow="multiline" ' +
+      'style="font-size:18px;font-weight:700;" fill="#1a1a1a" ' +
+      'x="160" y="42" text-anchor="middle">{val}</text>';
+
+    // Title (smaller, wraps)
+    OrgChart.templates.qa.field_1 =
+      '<text data-width="300" data-text-overflow="multiline" ' +
+      'style="font-size:13px;" fill="#333" ' +
+      'x="160" y="75" text-anchor="middle">{val}</text>';
+
+    /* ============================
+       LOAD DATA + RENDER CHART
+       ============================ */
+
+    const DATA_URL = "PASTE_YOUR_GOOGLE_SCRIPT_WEB_APP_URL_HERE";
 
     fetch(DATA_URL)
       .then(res => res.json())
       .then(data => {
 
-        // Fix root node + types
+        // Fix root + types
         data.forEach(n => {
           if (n.pid === "" || n.pid === null) delete n.pid;
           n.id = String(n.id);
@@ -38,13 +69,26 @@
         });
 
         new OrgChart(document.getElementById("tree"), {
-          template: "olivia",
+          template: "qa",
           enableSearch: true,
+
+          // Zoom & fit fixes
+          scaleInitial: OrgChart.match.boundary,
+          minScale: 0.2,
+          maxScale: 2,
+
           mouseScrool: OrgChart.action.zoom,
+          toolbar: {
+            zoom: true,
+            fit: true,
+            expandAll: true
+          },
+
           nodeBinding: {
             field_0: "name",
             field_1: "title"
           },
+
           nodes: data
         });
       })
