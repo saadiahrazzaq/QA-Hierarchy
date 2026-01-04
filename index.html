@@ -4,20 +4,12 @@
   <meta charset="utf-8">
   <title>QA Hierarchy</title>
 
-  <!-- Self-hosted OrgChart library -->
+  <!-- Self-hosted OrgChart -->
   <script src="./orgchart.js"></script>
 
   <style>
-    body {
-      margin: 0;
-      background: #062233;
-      font-family: Arial, sans-serif;
-    }
-
-    #tree {
-      width: 100vw;
-      height: 100vh;
-    }
+    body { margin:0; background:#062233; font-family: Arial, sans-serif; }
+    #tree { width:100vw; height:100vh; }
   </style>
 </head>
 
@@ -25,42 +17,33 @@
   <div id="tree"></div>
 
   <script>
-    /* ============================
-       CUSTOM QA TEMPLATE
-       ============================ */
+    // 1) Create a brand-new template so we control everything
+    OrgChart.templates.qa = {};
+    OrgChart.templates.qa.size = [340, 130];
 
-    OrgChart.templates.qa = Object.assign({}, OrgChart.templates.olivia);
-
-    // Bigger node size
-    OrgChart.templates.qa.size = [320, 120];
-
-    // Yellow card background
+    // Yellow card
     OrgChart.templates.qa.node =
-      '<rect x="0" y="0" width="320" height="120" rx="16" ry="16" ' +
-      'fill="#FFC107" stroke="#FFB300" stroke-width="2"></rect>';
+      '<rect x="0" y="0" width="340" height="130" rx="16" ry="16" fill="#FFC107" stroke="#FFB300" stroke-width="2"></rect>' +
+      '<rect x="0" y="0" width="340" height="34" rx="16" ry="16" fill="#FFB300"></rect>';
 
-    // Name (bigger, bold, wraps)
+    // Name (wrap, 2 lines)
     OrgChart.templates.qa.field_0 =
-      '<text data-width="300" data-text-overflow="multiline" ' +
+      '<text x="170" y="58" text-anchor="middle" ' +
       'style="font-size:18px;font-weight:700;" fill="#1a1a1a" ' +
-      'x="160" y="42" text-anchor="middle">{val}</text>';
+      'data-width="320" data-text-overflow="multiline" data-text-line="2">{val}</text>';
 
-    // Title (smaller, wraps)
+    // Title (wrap, 2 lines)
     OrgChart.templates.qa.field_1 =
-      '<text data-width="300" data-text-overflow="multiline" ' +
+      '<text x="170" y="92" text-anchor="middle" ' +
       'style="font-size:13px;" fill="#333" ' +
-      'x="160" y="75" text-anchor="middle">{val}</text>';
+      'data-width="320" data-text-overflow="multiline" data-text-line="2">{val}</text>';
 
-    /* ============================
-       LOAD DATA + RENDER CHART
-       ============================ */
-
+    // 2) Your live data URL
     const DATA_URL = "PASTE_YOUR_GOOGLE_SCRIPT_WEB_APP_URL_HERE";
 
     fetch(DATA_URL)
-      .then(res => res.json())
+      .then(r => r.json())
       .then(data => {
-
         // Fix root + types
         data.forEach(n => {
           if (n.pid === "" || n.pid === null) delete n.pid;
@@ -68,21 +51,17 @@
           if (n.pid !== undefined) n.pid = String(n.pid);
         });
 
+        // 3) Render
         new OrgChart(document.getElementById("tree"), {
           template: "qa",
           enableSearch: true,
 
-          // Zoom & fit fixes
+          // Fit/zoom fixes
           scaleInitial: OrgChart.match.boundary,
-          minScale: 0.2,
+          minScale: 0.15,
           maxScale: 2,
-
           mouseScrool: OrgChart.action.zoom,
-          toolbar: {
-            zoom: true,
-            fit: true,
-            expandAll: true
-          },
+          toolbar: { zoom: true, fit: true, expandAll: true },
 
           nodeBinding: {
             field_0: "name",
