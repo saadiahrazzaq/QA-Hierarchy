@@ -62,14 +62,25 @@
         if (!Array.isArray(data) || data.length === 0) throw new Error("Data is empty or not an array.");
 
         // render
-        new OrgChart(document.getElementById("tree"), {
-          template: "ula",
-          enableSearch: true,
-          mouseScrool: OrgChart.action.zoom,   // zoom with mouse wheel
-          nodeBinding: { field_0: "name", field_1: "title" },
-          nodes: data
-        });
-      })
+       .then(data => {
+
+  // 🔧 FIX: OrgChart requires pid = null, not ""
+  data.forEach(n => {
+    if (n.pid === "") n.pid = null;
+  });
+
+  new OrgChart(document.getElementById("tree"), {
+    template: "ula",
+    enableSearch: true,
+    mouseScrool: OrgChart.action.zoom,
+    nodeBinding: {
+      field_0: "name",
+      field_1: "title"
+    },
+    nodes: data
+  });
+});
+
       .catch(err => {
         console.error(err);
         showMsg(
@@ -82,3 +93,4 @@
   </script>
 </body>
 </html>
+
