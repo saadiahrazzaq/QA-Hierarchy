@@ -7,46 +7,61 @@
   <style>
     body { margin:0; background:#0b2233; font-family: Arial, sans-serif; }
     #tree { width:100vw; height:100vh; }
+    #loading {
+      position: fixed;
+      top: 16px; left: 16px;
+      color: #fff;
+      font-size: 18px;
+      z-index: 9999;
+    }
     #msg {
       position: fixed;
-      top: 12px; left: 12px;
-      background: rgba(255,255,255,0.92);
+      top: 52px; left: 16px;
+      background: rgba(255,255,255,0.95);
       padding: 10px 12px;
-      border-radius: 8px;
-      font-size: 14px;
-      max-width: 520px;
+      border-radius: 10px;
+      max-width: 720px;
       z-index: 9999;
-      display: none;
+      display:none;
+      font-size: 14px;
+      line-height: 1.35;
     }
     code { font-family: Consolas, monospace; font-size: 12px; }
   </style>
 </head>
 
 <body>
+  <!-- THIS MUST SHOW. If you don't see it, your page is cached / not updated -->
+  <div id="loading">Loading… (if you can read this, HTML is updated ✅)</div>
   <div id="msg"></div>
   <div id="tree"></div>
 
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbygw8c5ss2yW5wneBny74TUhD9_aRQIEQWZ03UaPfUyyX2J2m0cj9P7ydPbs2fXW53r/exec";
 
-    const msgBox = document.getElementById("msg");
-    function showMsg(text) {
-      msgBox.style.display = "block";
-      msgBox.innerHTML = text;
+    const msg = document.getElementById("msg");
+    const loading = document.getElementById("loading");
+
+    function showError(title, details) {
+      msg.style.display = "block";
+      msg.innerHTML =
+        "<b>" + title + "</b><br><br>" +
+        details +
+        "<br><br><b>Data URL:</b><br><code>" + WEB_APP_URL + "</code>";
     }
 
-    // 1) Load OrgChart library safely
-    function loadOrgChartLib() {
+    // Load OrgChart library
+    function loadOrgChart() {
       return new Promise((resolve, reject) => {
         const s = document.createElement("script");
         s.src = "https://balkangraph.com/js/latest/OrgChart.js";
-        s.onload = resolve;
-        s.onerror = () => reject(new Error("OrgChart.js failed to load (network blocked or URL unreachable)."));
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("OrgChart.js failed to load (blocked by network/adblock)."));
         document.head.appendChild(s);
       });
     }
 
-    // 2) Fetch your dynamic data
+    // Load data
     function loadData() {
       return fetch(WEB_APP_URL)
         .then(r => {
@@ -55,42 +70,43 @@
         });
     }
 
-    // 3) Run everything
-    Promise.all([loadOrgChartLib(), loadData()])
+    Promise.all([loadOrgChart(), loadData()])
       .then(([_, data]) => {
-        if (!window.OrgChart) throw new Error("OrgChart global not found after script load.");
-        if (!Array.isArray(data) || data.length === 0) throw new Error("Data is empty or not an array.");
+        // ✅ FIX: OrgChart hates pid="" for root. Remove pid completely.
+        data.forEach(n => {
+          if (n.pid === "" || n.pid === null) delete n.pid;
+          // ensure numbers are numbers (just in case)
+          if (typeof n.id === "string") n.id = Number(n.id);
+          if (typeof n.pid === "string") n.pid = Number(n.pid);
+        });
 
-        // render
-       .then(data => {
+        if (!window.OrgChart) throw new Error("OrgChart global not found (script didn’t initialize).");
+        if (!Array.isArray(data) || data.length === 0) throw new Error("Data is empty / not an array.");
 
-  // 🔧 FIX: OrgChart requires pid = null, not ""
-  data.forEach(n => {
-    if (n.pid === "") n.pid = null;
-  });
+        // Render
+        new OrgChart(document.getElementById("tree"), {
+          template: "ula",
+          enableSearch: true,
+          mouseScrool: OrgChart.action.zoom,
+          nodeBinding: { field_0: "name", field_1: "title" },
+          nodes: data
+        });
 
-  new OrgChart(document.getElementById("tree"), {
-    template: "ula",
-    enableSearch: true,
-    mouseScrool: OrgChart.action.zoom,
-    nodeBinding: {
-      field_0: "name",
-      field_1: "title"
-    },
-    nodes: data
-  });
-});
-
+        loading.innerText = "Loaded ✅ (you should see boxes now)";
+        setTimeout(() => loading.style.display = "none", 1500);
+      })
       .catch(err => {
         console.error(err);
-        showMsg(
-          "<b>Something blocked the org chart.</b><br><br>" +
-          err.message +
-          "<br><br><b>Quick fix:</b> open DevTools → Console and screenshot the red error." +
-          "<br><br><code>" + WEB_APP_URL + "</code>"
+        loading.innerText = "Failed ❌";
+        showError(
+          "Org chart not rendering",
+          "Error: <code>" + err.message + "</code><br><br>" +
+          "Most common causes:<br>" +
+          "1) OrgChart.js blocked by network/adblock<br>" +
+          "2) Wrong Web App URL in fetch()<br>" +
+          "3) Cached old GitHub Pages build"
         );
       });
   </script>
 </body>
 </html>
-
