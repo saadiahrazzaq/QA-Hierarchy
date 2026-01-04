@@ -1,27 +1,7 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <script src="https://balkangraph.com/js/latest/OrgChart.js"></script>
-  <style>
-    body { margin:0; background:#0b2233; }
-    #tree { width:100vw; height:100vh; }
-  </style>
-</head>
+<head><meta charset="utf-8"><title>QA Hierarchy</title></head>
 <body>
-<div id="tree"></div>
-
-<script>
-fetch("https://script.google.com/macros/s/AKfycbygw8c5ss2yW5wneBny74TUhD9_aRQIEQWZ03UaPfUyyX2J2m0cj9P7ydPbs2fXW53r/exec")
-  .then(r => r.json())
-  .then(nodes => {
-    new OrgChart(document.getElementById("tree"), {
-      template: "ula",
-      enableSearch: true,
-      nodeBinding: { field_0: "name", field_1: "title" },
-      nodes: nodes
-    });
-  });
-</script>
-
+  <h1>QA Hierarchy is Live ✅</h1>
 </body>
 </html>
