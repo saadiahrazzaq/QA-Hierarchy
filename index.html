@@ -4,56 +4,78 @@
   <meta charset="utf-8">
   <title>QA Hierarchy</title>
 
-  <!-- OrgChart (CDN) -->
-  <link rel="stylesheet" href="https://unpkg.com/@balkangraph/orgchart.js@8.15.6/dist/css/orgchart.css">
-  <script src="https://unpkg.com/@balkangraph/orgchart.js@8.15.6/dist/js/orgchart.js"></script>
+  <!-- CSS (use jsDelivr - usually not blocked) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@balkangraph/orgchart.js@8.15.6/dist/css/orgchart.css">
 
   <style>
     body { margin:0; background:#0b2233; font-family: Arial, sans-serif; }
     #tree { width:100vw; height:100vh; }
-    #status { position:fixed; top:12px; left:12px; color:#fff; z-index:9999; }
+    #status { position: fixed; top: 12px; left: 12px; color:#fff; z-index:9999; }
   </style>
 </head>
 
 <body>
-  <div id="status">Loading…</div>
+  <div id="status">Loading library…</div>
   <div id="tree"></div>
 
   <script>
     const DATA_URL = "https://script.google.com/macros/s/AKfycbygw8c5ss2yW5wneBny74TUhD9_aRQIEQWZ03UaPfUyyX2J2m0cj9P7ydPbs2fXW53r/exec";
 
-    fetch(DATA_URL)
-      .then(r => r.json())
-      .then(data => {
-
-        // Root node: remove pid if empty
-        data.forEach(n => {
-          if (n.pid === "" || n.pid === null) delete n.pid;
-          // make sure id/pid are numbers
-          n.id = Number(n.id);
-          if (n.pid !== undefined) n.pid = Number(n.pid);
-        });
-
-        document.getElementById("status").innerText = "Rendering…";
-
-        new OrgChart(document.getElementById("tree"), {
-          template: "olivia",          // safe template
-          enableSearch: true,
-          mouseScrool: OrgChart.action.zoom,
-          nodeBinding: {
-            field_0: "name",
-            field_1: "title"
-          },
-          nodes: data
-        });
-
-        document.getElementById("status").innerText = "Done ✅";
-        setTimeout(() => document.getElementById("status").style.display = "none", 1200);
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById("status").innerText = "Error ❌ check console";
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
       });
+    }
+
+    async function main() {
+      // Try CDN #1 (jsDelivr)
+      try {
+        await loadScript("https://cdn.jsdelivr.net/npm/@balkangraph/orgchart.js@8.15.6/dist/js/orgchart.js");
+      } catch (e) {
+        // Fallback CDN #2 (unpkg)
+        await loadScript("https://unpkg.com/@balkangraph/orgchart.js@8.15.6/dist/js/orgchart.js");
+      }
+
+      if (typeof OrgChart === "undefined") {
+        document.getElementById("status").innerText =
+          "OrgChart library blocked ❌ (try disabling VPN/adblock or use another network)";
+        return;
+      }
+
+      document.getElementById("status").innerText = "Loading data…";
+
+      const res = await fetch(DATA_URL);
+      const data = await res.json();
+
+      // Fix root pid + force IDs to strings (safe for all versions)
+      data.forEach(n => {
+        if (n.pid === "" || n.pid === null) delete n.pid;
+        n.id = String(n.id);
+        if (n.pid !== undefined) n.pid = String(n.pid);
+      });
+
+      document.getElementById("status").innerText = "Rendering…";
+
+      new OrgChart(document.getElementById("tree"), {
+        template: "olivia",
+        enableSearch: true,
+        mouseScrool: OrgChart.action.zoom,
+        nodeBinding: { field_0: "name", field_1: "title" },
+        nodes: data
+      });
+
+      document.getElementById("status").innerText = "Done ✅";
+      setTimeout(() => document.getElementById("status").style.display = "none", 1200);
+    }
+
+    main().catch(err => {
+      console.error(err);
+      document.getElementById("status").innerText = "Error ❌ check console";
+    });
   </script>
 </body>
 </html>
