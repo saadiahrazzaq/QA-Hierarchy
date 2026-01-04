@@ -4,40 +4,81 @@
   <meta charset="utf-8" />
   <title>QA Hierarchy</title>
 
-  <!-- OrgChart library -->
-  <script src="https://balkangraph.com/js/latest/OrgChart.js"></script>
-
   <style>
-    body {
-      margin: 0;
-      background: #0b2233;
-      font-family: Arial, sans-serif;
+    body { margin:0; background:#0b2233; font-family: Arial, sans-serif; }
+    #tree { width:100vw; height:100vh; }
+    #msg {
+      position: fixed;
+      top: 12px; left: 12px;
+      background: rgba(255,255,255,0.92);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      max-width: 520px;
+      z-index: 9999;
+      display: none;
     }
-    #tree {
-      width: 100vw;
-      height: 100vh;
-    }
+    code { font-family: Consolas, monospace; font-size: 12px; }
   </style>
 </head>
 
 <body>
+  <div id="msg"></div>
   <div id="tree"></div>
 
   <script>
-    fetch("https://script.google.com/macros/s/AKfycbygw8c5ss2yW5wneBny74TUhD9_aRQIEQWZ03UaPfUyyX2J2m0cj9P7ydPbs2fXW53r/exec")
-      .then(response => response.json())
-      .then(data => {
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbygw8c5ss2yW5wneBny74TUhD9_aRQIEQWZ03UaPfUyyX2J2m0cj9P7ydPbs2fXW53r/exec";
+
+    const msgBox = document.getElementById("msg");
+    function showMsg(text) {
+      msgBox.style.display = "block";
+      msgBox.innerHTML = text;
+    }
+
+    // 1) Load OrgChart library safely
+    function loadOrgChartLib() {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = "https://balkangraph.com/js/latest/OrgChart.js";
+        s.onload = resolve;
+        s.onerror = () => reject(new Error("OrgChart.js failed to load (network blocked or URL unreachable)."));
+        document.head.appendChild(s);
+      });
+    }
+
+    // 2) Fetch your dynamic data
+    function loadData() {
+      return fetch(WEB_APP_URL)
+        .then(r => {
+          if (!r.ok) throw new Error("Data fetch failed: HTTP " + r.status);
+          return r.json();
+        });
+    }
+
+    // 3) Run everything
+    Promise.all([loadOrgChartLib(), loadData()])
+      .then(([_, data]) => {
+        if (!window.OrgChart) throw new Error("OrgChart global not found after script load.");
+        if (!Array.isArray(data) || data.length === 0) throw new Error("Data is empty or not an array.");
+
+        // render
         new OrgChart(document.getElementById("tree"), {
           template: "ula",
           enableSearch: true,
-          nodeBinding: {
-            field_0: "name",
-            field_1: "title"
-          },
+          mouseScrool: OrgChart.action.zoom,   // zoom with mouse wheel
+          nodeBinding: { field_0: "name", field_1: "title" },
           nodes: data
         });
+      })
+      .catch(err => {
+        console.error(err);
+        showMsg(
+          "<b>Something blocked the org chart.</b><br><br>" +
+          err.message +
+          "<br><br><b>Quick fix:</b> open DevTools → Console and screenshot the red error." +
+          "<br><br><code>" + WEB_APP_URL + "</code>"
+        );
       });
   </script>
 </body>
 </html>
-
