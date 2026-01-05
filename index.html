@@ -26,24 +26,27 @@
 
   <script>
     /* ============================
-       CUSTOM ENTERPRISE TEMPLATE
+       SAFE TEMPLATE SETUP
        ============================ */
 
-    // Clone an existing template safely
-    const baseTemplate =
-      OrgChart.templates.olivia ||
-      OrgChart.templates.ula ||
-      OrgChart.templates.ana;
+    // Pick whatever template exists in your orgchart.js
+    const templateNames = Object.keys(OrgChart.templates || {});
+    const baseName = templateNames.includes("olivia")
+      ? "olivia"
+      : templateNames[0];
 
-    OrgChart.templates.qa = Object.assign({}, baseTemplate);
+    const base = OrgChart.templates[baseName];
+
+    // Clone base template
+    OrgChart.templates.qa = Object.assign({}, base);
 
     // Bigger cards
     OrgChart.templates.qa.size = [360, 140];
 
-    // White card + blue header
+    // White card + blue header (standard enterprise)
     OrgChart.templates.qa.node =
       '<rect x="0" y="0" width="360" height="140" rx="14" ry="14" fill="#FFFFFF" stroke="#D0D7DE" stroke-width="2"></rect>' +
-      '<rect x="0" y="0" width="360" height="36" rx="14" ry="14" fill="#0B5FFF"></rect>';
+      '<rect x="0" y="0" width="360" height="36" rx="14" ry="14" fill="#2563EB"></rect>';
 
     // Name (wrap, bold)
     OrgChart.templates.qa.field_0 =
@@ -62,13 +65,13 @@
        ============================ */
 
     const DATA_URL =
-      "https://script.google.com/a/macros/venturedive.com/s/AKfycbzEoXPpUbFVUIZiM2YiF6vONK3J_RGjmhAz-FPluMrIr1wBcqGHx84sAcYML_kGUAdd/exec";
+      "https://script.google.com/macros/s/AKfycbzEoXPpUbFVUIZiM2YiF6vONK3J_RGjmhAz-FPluMrIr1wBcqGHx84sAcYML_kGUAdd/exec";
 
     fetch(DATA_URL)
       .then(res => res.json())
       .then(data => {
 
-        // Fix root node + enforce string ids
+        // Fix root + enforce string IDs
         data.forEach(n => {
           if (n.pid === "" || n.pid === null) delete n.pid;
           n.id = String(n.id);
@@ -83,30 +86,8 @@
           template: "qa",
           enableSearch: true,
 
-          // ✅ Vertical layout
+          // ✅ Vertical hierarchy
           layout: OrgChart.tree,
           orientation: OrgChart.orientation.top,
 
-          // Zoom + fit
-          scaleInitial: OrgChart.match.boundary,
-          minScale: 0.15,
-          maxScale: 2,
-          mouseScrool: OrgChart.action.zoom,
-          toolbar: {
-            zoom: true,
-            fit: true,
-            expandAll: true
-          },
-
-          nodeBinding: {
-            field_0: "name",
-            field_1: "title"
-          },
-
-          nodes: data
-        });
-      })
-      .catch(err => console.error(err));
-  </script>
-</body>
-</html>
+          // Zoom + fi
