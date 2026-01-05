@@ -26,21 +26,23 @@
 
   <script>
     /* ===============================
-       SAFEST TEMPLATE SETUP
+       SAFETY CHECK
        =============================== */
-
     if (!window.OrgChart) {
-      document.body.innerHTML = "<h2 style='padding:20px'>OrgChart library not loaded</h2>";
+      document.body.innerHTML =
+        "<h2 style='padding:20px'>OrgChart library not loaded</h2>";
       throw new Error("OrgChart not loaded");
     }
 
+    /* ===============================
+       TEMPLATE (ENTERPRISE LOOK)
+       =============================== */
     const templateNames = Object.keys(OrgChart.templates || {});
-    const baseTemplateName = templateNames.includes("olivia")
+    const baseName = templateNames.includes("olivia")
       ? "olivia"
       : templateNames[0];
 
-    const baseTemplate = OrgChart.templates[baseTemplateName];
-
+    const baseTemplate = OrgChart.templates[baseName];
     OrgChart.templates.qa = Object.assign({}, baseTemplate);
 
     OrgChart.templates.qa.size = [340, 120];
@@ -61,9 +63,8 @@
       'x="170" y="92" text-anchor="middle">{val}</text>';
 
     /* ===============================
-       DATA SOURCE
+       DATA SOURCE (YOUR URL)
        =============================== */
-
     const DATA_URL =
       "https://script.google.com/macros/s/AKfycbzEoXPpUbFVUIZiM2YiF6vONK3J_RGjmhAz-FPluMrIr1wBcqGHx84sAcYML_kGUAdd/exec";
 
@@ -71,7 +72,7 @@
       .then(r => r.json())
       .then(data => {
 
-        // Fix IDs
+        // Normalize IDs
         data.forEach(n => {
           if (n.pid === "" || n.pid === null) delete n.pid;
           n.id = String(n.id);
@@ -79,14 +80,13 @@
         });
 
         /* ===============================
-           RENDER CHART (VERTICAL + STABLE)
+           RENDER ORG CHART
            =============================== */
-
         new OrgChart(document.getElementById("tree"), {
           template: "qa",
           enableSearch: true,
 
-          // 🔑 THIS forces vertical layout
+          // ✅ Vertical layout
           layout: OrgChart.tree,
           orientation: OrgChart.orientation.top,
 
@@ -94,18 +94,22 @@
           siblingSeparation: 30,
           subtreeSeparation: 80,
 
-          // 🔑 Stable collapse
+          // ✅ Stable collapse
           collapse: {
             level: 2,
             allChildren: true
           },
 
-          // Zoom & fit
+          // ✅ Remove detail-view & buttons
+          nodeMenu: null,
+          nodeContextMenu: null,
+          menu: null,
+
+          // Zoom + fit
           scaleInitial: OrgChart.match.boundary,
           minScale: 0.2,
           maxScale: 2,
           mouseScrool: OrgChart.action.zoom,
-
           toolbar: {
             zoom: true,
             fit: true,
