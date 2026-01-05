@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <title>QA Hierarchy</title>
 
-  <!-- Self-hosted OrgChart library -->
+  <!-- Self-hosted OrgChart -->
   <script src="./orgchart.js"></script>
 
   <style>
     body {
       margin: 0;
-      background: #F6F8FA; /* clean enterprise background */
+      background: #F6F8FA;
       font-family: Arial, sans-serif;
     }
 
@@ -25,69 +25,106 @@
   <div id="tree"></div>
 
   <script>
-    /* ============================
-       SAFE TEMPLATE SETUP
-       ============================ */
+    /* ===============================
+       SAFEST TEMPLATE SETUP
+       =============================== */
 
-    // Pick whatever template exists in your orgchart.js
+    if (!window.OrgChart) {
+      document.body.innerHTML = "<h2 style='padding:20px'>OrgChart library not loaded</h2>";
+      throw new Error("OrgChart not loaded");
+    }
+
     const templateNames = Object.keys(OrgChart.templates || {});
-    const baseName = templateNames.includes("olivia")
+    const baseTemplateName = templateNames.includes("olivia")
       ? "olivia"
       : templateNames[0];
 
-    const base = OrgChart.templates[baseName];
+    const baseTemplate = OrgChart.templates[baseTemplateName];
 
-    // Clone base template
-    OrgChart.templates.qa = Object.assign({}, base);
+    OrgChart.templates.qa = Object.assign({}, baseTemplate);
 
-    // Bigger cards
-    OrgChart.templates.qa.size = [360, 140];
+    OrgChart.templates.qa.size = [340, 120];
 
-    // White card + blue header (standard enterprise)
+    // White card + blue header
     OrgChart.templates.qa.node =
-      '<rect x="0" y="0" width="360" height="140" rx="14" ry="14" fill="#FFFFFF" stroke="#D0D7DE" stroke-width="2"></rect>' +
-      '<rect x="0" y="0" width="360" height="36" rx="14" ry="14" fill="#2563EB"></rect>';
+      '<rect x="0" y="0" width="340" height="120" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"></rect>' +
+      '<rect x="0" y="0" width="340" height="34" rx="12" ry="12" fill="#2563EB"></rect>';
 
-    // Name (wrap, bold)
     OrgChart.templates.qa.field_0 =
-      '<text data-width="330" data-text-overflow="multiline" data-text-line="2" ' +
-      'style="font-size:18px;font-weight:700;" fill="#111827" ' +
-      'x="180" y="62" text-anchor="middle">{val}</text>';
+      '<text data-width="320" data-text-overflow="multiline" data-text-line="2" ' +
+      'style="font-size:16px;font-weight:700;" fill="#0F172A" ' +
+      'x="170" y="60" text-anchor="middle">{val}</text>';
 
-    // Title (wrap)
     OrgChart.templates.qa.field_1 =
-      '<text data-width="330" data-text-overflow="multiline" data-text-line="2" ' +
-      'style="font-size:13px;" fill="#374151" ' +
-      'x="180" y="102" text-anchor="middle">{val}</text>';
+      '<text data-width="320" data-text-overflow="multiline" data-text-line="2" ' +
+      'style="font-size:13px;" fill="#334155" ' +
+      'x="170" y="92" text-anchor="middle">{val}</text>';
 
-    /* ============================
-       DATA SOURCE (YOUR URL)
-       ============================ */
+    /* ===============================
+       DATA SOURCE
+       =============================== */
 
     const DATA_URL =
       "https://script.google.com/macros/s/AKfycbzEoXPpUbFVUIZiM2YiF6vONK3J_RGjmhAz-FPluMrIr1wBcqGHx84sAcYML_kGUAdd/exec";
 
     fetch(DATA_URL)
-      .then(res => res.json())
+      .then(r => r.json())
       .then(data => {
 
-        // Fix root + enforce string IDs
+        // Fix IDs
         data.forEach(n => {
           if (n.pid === "" || n.pid === null) delete n.pid;
           n.id = String(n.id);
           if (n.pid !== undefined) n.pid = String(n.pid);
         });
 
-        /* ============================
-           RENDER VERTICAL ORG CHART
-           ============================ */
+        /* ===============================
+           RENDER CHART (VERTICAL + STABLE)
+           =============================== */
 
         new OrgChart(document.getElementById("tree"), {
           template: "qa",
           enableSearch: true,
 
-          // ✅ Vertical hierarchy
+          // 🔑 THIS forces vertical layout
           layout: OrgChart.tree,
           orientation: OrgChart.orientation.top,
 
-          // Zoom + fi
+          levelSeparation: 70,
+          siblingSeparation: 30,
+          subtreeSeparation: 80,
+
+          // 🔑 Stable collapse
+          collapse: {
+            level: 2,
+            allChildren: true
+          },
+
+          // Zoom & fit
+          scaleInitial: OrgChart.match.boundary,
+          minScale: 0.2,
+          maxScale: 2,
+          mouseScrool: OrgChart.action.zoom,
+
+          toolbar: {
+            zoom: true,
+            fit: true,
+            expandAll: true
+          },
+
+          nodeBinding: {
+            field_0: "name",
+            field_1: "title"
+          },
+
+          nodes: data
+        });
+      })
+      .catch(err => {
+        console.error(err);
+        document.body.innerHTML =
+          "<h2 style='padding:20px'>Failed to load data</h2>";
+      });
+  </script>
+</body>
+</html>
