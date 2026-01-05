@@ -8,8 +8,16 @@
   <script src="./orgchart.js"></script>
 
   <style>
-    body { margin:0; background:#F6F8FA; font-family: Arial, sans-serif; }
-    #tree { width:100vw; height:100vh; }
+    body {
+      margin: 0;
+      background: #F1F5F9; /* soft enterprise background */
+      font-family: Arial, sans-serif;
+    }
+
+    #tree {
+      width: 100vw;
+      height: 100vh;
+    }
   </style>
 </head>
 
@@ -22,67 +30,91 @@
       throw new Error("OrgChart not loaded");
     }
 
-    // Choose an existing template from your build
-    const templateNames = Object.keys(OrgChart.templates || {});
-    const baseName = templateNames.includes("olivia") ? "olivia" : templateNames[0];
+    /* ===============================
+       TEMPLATE (PROFESSIONAL STYLE)
+       =============================== */
+
+    const templates = Object.keys(OrgChart.templates || {});
+    const baseName = templates.includes("olivia") ? "olivia" : templates[0];
     const base = OrgChart.templates[baseName];
 
-    // Custom template (clean enterprise look)
     OrgChart.templates.qa = Object.assign({}, base);
-    OrgChart.templates.qa.size = [340, 120];
+    OrgChart.templates.qa.size = [330, 115];
 
+    // Card: white + subtle slate header
     OrgChart.templates.qa.node =
-      '<rect x="0" y="0" width="340" height="120" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"></rect>' +
-      '<rect x="0" y="0" width="340" height="34" rx="12" ry="12" fill="#2563EB"></rect>';
+      '<rect x="0" y="0" width="330" height="115" rx="10" ry="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"></rect>' +
+      '<rect x="0" y="0" width="330" height="30" rx="10" ry="10" fill="#334155"></rect>';
 
+    // Name
     OrgChart.templates.qa.field_0 =
-      '<text data-width="320" data-text-overflow="multiline" data-text-line="2" ' +
-      'style="font-size:16px;font-weight:700;" fill="#0F172A" x="170" y="60" text-anchor="middle">{val}</text>';
+      '<text data-width="310" data-text-overflow="multiline" data-text-line="2" ' +
+      'style="font-size:15px;font-weight:600;" fill="#0F172A" ' +
+      'x="165" y="56" text-anchor="middle">{val}</text>';
 
+    // Title
     OrgChart.templates.qa.field_1 =
-      '<text data-width="320" data-text-overflow="multiline" data-text-line="2" ' +
-      'style="font-size:13px;" fill="#334155" x="170" y="92" text-anchor="middle">{val}</text>';
+      '<text data-width="310" data-text-overflow="multiline" data-text-line="2" ' +
+      'style="font-size:12px;" fill="#475569" ' +
+      'x="165" y="84" text-anchor="middle">{val}</text>';
 
-    // Your live data
+    /* ===============================
+       DATA SOURCE
+       =============================== */
+
     const DATA_URL =
       "https://script.google.com/macros/s/AKfycbzEoXPpUbFVUIZiM2YiF6vONK3J_RGjmhAz-FPluMrIr1wBcqGHx84sAcYML_kGUAdd/exec";
 
     fetch(DATA_URL)
       .then(r => r.json())
       .then(data => {
-        // Fix IDs & root
+
         data.forEach(n => {
           if (n.pid === "" || n.pid === null) delete n.pid;
           n.id = String(n.id);
           if (n.pid !== undefined) n.pid = String(n.pid);
         });
 
+        /* ===============================
+           RENDER CHART
+           =============================== */
+
         new OrgChart(document.getElementById("tree"), {
           template: "qa",
-          enableSearch: true,
 
-          // ✅ Vertical
+          // ❌ remove search bar
+          enableSearch: false,
+
+          // ❌ remove right details panel
+          nodeMouseClick: OrgChart.action.center,
+
+          // ❌ remove node menus
+          nodeMenu: null,
+          nodeContextMenu: null,
+
+          // Vertical layout
           layout: OrgChart.tree,
           orientation: OrgChart.orientation.top,
           levelSeparation: 70,
           siblingSeparation: 30,
           subtreeSeparation: 80,
 
-          // ✅ Stop the right details panel from opening
-          nodeMouseClick: OrgChart.action.none,
-
-          // ✅ Also remove node menus (just in case)
-          nodeMenu: null,
-          nodeContextMenu: null,
-
-          // Zoom / fit
+          // Zoom & fit (toolbar only)
           scaleInitial: OrgChart.match.boundary,
           minScale: 0.2,
           maxScale: 2,
           mouseScrool: OrgChart.action.zoom,
-          toolbar: { zoom: true, fit: true, expandAll: true },
+          toolbar: {
+            zoom: true,
+            fit: true,
+            expandAll: true
+          },
 
-          nodeBinding: { field_0: "name", field_1: "title" },
+          nodeBinding: {
+            field_0: "name",
+            field_1: "title"
+          },
+
           nodes: data
         });
       })
